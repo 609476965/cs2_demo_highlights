@@ -11,6 +11,7 @@ from demoparser2 import DemoParser
 import config
 from moviepy import *
 import uuid
+MERGE_THRESHOLD = 1000
 
 ows_client = obsws(config.obs_ws_host, config.obs_ws_port, config.obs_ws_password)
 ows_client.connect()
@@ -111,30 +112,100 @@ pyautogui.write("``")
 pyautogui.write("demoui")
 pyautogui.press("enter")
 
+# 5E录像需要打开这段
+# pyautogui.write("`")
+# time.sleep(2)
+# pyautogui.press("space")
+# pyautogui.write("`")
+
+# 按tick阈值分组击杀事件
+kill_groups = []
+current_group = []
+
 for _, kill in deaths.iterrows():
+    if not current_group:
+        current_group.append(kill)
+    else:
+        # 如果当前击杀tick与组内最后一个击杀tick差值小于等于阈值
+        # print(kill)
+        if kill['tick'] - current_group[-1]['tick'] <= MERGE_THRESHOLD:
+            current_group.append(kill)
+        else:
+            kill_groups.append(current_group)
+            current_group = [kill]
+
+# 添加最后一组
+if current_group:
+    kill_groups.append(current_group)
+
+for group_index, kill_group in enumerate(kill_groups):
+    # 使用组内第一个击杀的tick减去提前量作为起始点
+    start_tick = kill_group[0]['tick'] - 200
+    
     pyautogui.write("``")
-    pyautogui.write(f"demo_gototick {kill['tick'] - 200}")
+    pyautogui.write(f"demo_gototick {start_tick}")
     pyautogui.press("enter")
 
     selected_name = players.iloc[player_index]['name']
-    pyautogui.write(f'spec_player "{selected_name}"')
+    pyautogui.write(f'spec_player {player_index+1}')    #官匹录像+1，5E录像+2
     pyautogui.press("enter")
 
     pyautogui.write(f"demo_resume")
     pyautogui.press("enter")
     pyautogui.write("`")
-
+   
     time.sleep(0.1)
 
+    # 开始录制
     ows_client.call(requests.StartRecord())
 
-    time.sleep(5)
+    # 计算录制时长：基础时长 + 组内额外击杀的补偿时间
+    base_duration = 5
+    extra_kills = len(kill_group) - 1
+    record_duration = base_duration + (extra_kills * 4)  # 每多一个击杀增加5秒
+    
+    # 如果是最后一组，适当延长录制时间
+    if group_index == len(kill_groups) - 1:
+        record_duration = max(record_duration, 8)
+    
+    print(f"录制第{group_index + 1}组，包含{len(kill_group)}个击杀，时长{record_duration}秒")
+    time.sleep(record_duration)
 
     ows_client.call(requests.StopRecord())
-
     pyautogui.write("`")
     pyautogui.write(f"demo_pause")
     pyautogui.press("enter")
+
+# for _, kill in deaths_filter.iterrows():
+#     record_count = record_count + 1
+#     print(kill['tick'])
+#     print(record_count)
+#     pyautogui.write("``")
+#     pyautogui.write(f"demo_gototick {kill['tick'] - 200}")
+#     pyautogui.press("enter")
+
+#     selected_name = players.iloc[player_index]['name']
+#     pyautogui.write(f'spec_player {player_index + 2}')
+#     pyautogui.press("enter")
+
+#     pyautogui.write(f"demo_resume")
+#     pyautogui.press("enter")
+#     pyautogui.write("`")
+   
+#     time.sleep(0.1)
+
+#     ows_client.call(requests.StartRecord())
+
+#     if record_count == count:
+#         print("last kill！")
+#         time.sleep(10)
+#     else:
+#         time.sleep(5)
+
+#     ows_client.call(requests.StopRecord())
+#     pyautogui.write("`")
+#     pyautogui.write(f"demo_pause")
+#     pyautogui.press("enter")
 
 pyautogui.write("disconnect")
 pyautogui.press("enter")
