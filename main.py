@@ -11,7 +11,7 @@ from demoparser2 import DemoParser
 import config
 from moviepy import *
 import uuid
-MERGE_THRESHOLD = 1000
+MERGE_THRESHOLD = 500
 
 ows_client = obsws(config.obs_ws_host, config.obs_ws_port, config.obs_ws_password)
 ows_client.connect()
@@ -113,10 +113,10 @@ pyautogui.write("demoui")
 pyautogui.press("enter")
 
 # 5E录像需要打开这段
-# pyautogui.write("`")
-# time.sleep(2)
-# pyautogui.press("space")
-# pyautogui.write("`")
+pyautogui.write("`")
+time.sleep(2)
+pyautogui.press("space")
+pyautogui.write("`")
 
 # 按tick阈值分组击杀事件
 kill_groups = []
@@ -147,7 +147,9 @@ for group_index, kill_group in enumerate(kill_groups):
     pyautogui.press("enter")
 
     selected_name = players.iloc[player_index]['name']
-    pyautogui.write(f'spec_player {player_index+1}')    #官匹录像+1，5E录像+2
+    print(selected_name)
+    print(player_index)
+    pyautogui.write(f'spec_player {player_index+2}')    #官匹录像+1，5E录像+2
     pyautogui.press("enter")
 
     pyautogui.write(f"demo_resume")
@@ -162,11 +164,11 @@ for group_index, kill_group in enumerate(kill_groups):
     # 计算录制时长：基础时长 + 组内额外击杀的补偿时间
     base_duration = 5
     extra_kills = len(kill_group) - 1
-    record_duration = base_duration + (extra_kills * 4)  # 每多一个击杀增加5秒
+    record_duration = base_duration + (extra_kills * 5)  # 每多一个击杀增加5秒
     
     # 如果是最后一组，适当延长录制时间
     if group_index == len(kill_groups) - 1:
-        record_duration = max(record_duration, 8)
+        record_duration = record_duration + 6 #max(record_duration, 10)
     
     print(f"录制第{group_index + 1}组，包含{len(kill_group)}个击杀，时长{record_duration}秒")
     time.sleep(record_duration)
