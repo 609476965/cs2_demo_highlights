@@ -8,8 +8,7 @@ def get_steam_path():
         return steam_path
     
 def get_cs2_path(): # assume CS2 is installed where Steam is
-    # return os.path.join(get_steam_path(), "steamapps", "common", "Counter-Strike Global Offensive")
-    return os.path.join("G:/SteamLibrary", "steamapps", "common", "Counter-Strike Global Offensive")
+    return os.path.join(get_steam_path(), "steamapps", "common", "Counter-Strike Global Offensive")
 
 def is_cs2_running():
     for proc in psutil.process_iter(['name']):
